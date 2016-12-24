@@ -1,0 +1,82 @@
+---
+title: "Exercise 1"
+author: "Pratyush Pati"
+---
+
+
+```{r refine_original}
+###################### 1: Clean up brand names ###########################
+
+install.packages("tidyr")
+install.packages("dplyr")
+library(tidyr)
+library(dplyr)
+
+# Make new clean dataset from original 
+refine_clean <- refine_original                                             
+
+# Make Lower Case
+refine_clean$company <- tolower(refine_clean$company)                      
+
+# Correct philips
+refine_clean$company <- gsub('^ph.*', 'philips', refine_clean$company)
+refine_clean$company <- gsub('^f.*', 'philips', refine_clean$company)
+
+# Correct akzo
+refine_clean$company <- gsub('^ak.*', 'akzo', refine_clean$company)      
+
+# Correct van houten
+refine_clean$company <- gsub('^va.*', 'van houten', refine_clean$company) 
+
+# Correct unilever
+refine_clean$company <- gsub('^un.*', 'unilever', refine_clean$company) 
+
+################# 2: Separate Product Code and Number ##################################
+
+refine_clean <- separate(refine_clean, `Product code / number`, 
+                         c("product_code", "product_number"), sep = '-')
+
+##################### 3: Add Product Categories ########################################
+
+refine_clean <- refine_clean %>% mutate(product_category = product_code)
+refine_clean$product_category <- gsub('^p.*', 'Smartphone', refine_clean$product_category)
+refine_clean$product_category <- gsub('^v.*', 'TV', refine_clean$product_category)
+refine_clean$product_category <- gsub('^x.*', 'Laptop', refine_clean$product_category)
+refine_clean$product_category <- gsub('^q.*', 'Tablet', refine_clean$product_category)
+
+##################### 4: Add Full Address for Geocoding #################################
+
+refine_clean <- unite(refine_clean, "full_address", address, city, country, sep = ", ")
+
+######################## 5: Dummy Variables ############################################
+
+# Initialize all dummy variable columns
+refine_clean <- refine_clean %>% mutate(company_philips = '0')
+refine_clean <- refine_clean %>% mutate(company_akzo = '0')
+refine_clean <- refine_clean %>% mutate(company_van_houten = '0')
+refine_clean <- refine_clean %>% mutate(company_unilever = '0')
+
+refine_clean <- refine_clean %>% mutate(product_smartphone = '0')
+refine_clean <- refine_clean %>% mutate(product_tv = '0')
+refine_clean <- refine_clean %>% mutate(product_laptop ='0')
+refine_clean <- refine_clean %>% mutate(product_tablet = '0')
+
+# Assign correct binary
+refine_clean <- within(refine_clean, {
+  company_philips = ifelse(company == 'philips', 1, 0)
+  company_akzo = ifelse(company == 'akzo', 1, 0)
+  company_van_houten = ifelse(company == 'van houten', 1, 0)
+  company_unilever = ifelse(company == 'unilever', 1, 0)
+  
+  product_smartphone = ifelse(product_category == 'Smartphone', 1, 0)
+  product_tv = ifelse(product_category == 'TV', 1, 0)
+  product_laptop = ifelse(product_category == 'Laptop', 1, 0)
+  product_tablet = ifelse(product_category == 'Tablet', 1, 0)
+ 
+ })
+########################################################################################
+
+#Export refine_clean and original to a csv file
+write.csv(refine_clean, file='refine_clean.csv')
+write.csv(refine_original, file='refine_original.csv')
+```
